@@ -1,0 +1,232 @@
+#!/bin/bash
+
+#requirements:
+#bash
+#user created with sudo privs and script be in their home
+#internet connection
+#graphics drivers
+
+#VARIABLES
+USER="rng"
+EMAIL="ray@perfectcast.co.uk"
+
+#update 
+read -rp "updating system..."
+sudo pacman -Syu
+
+#cd to home dir
+read -rp "Moving to /home/$USER"
+cd "/home/$USER" || exit
+
+#create dirs
+read -rp "Creating dirs in new user home..."
+mkdir media media/audio media/audio/music media/pics media/pics/papes media/pics/screenshots media/vids media/vids/shows media/vids/films media/vids/screencasts docs src src/builds .config
+#
+#install packages
+read -rp "Installing packages..."
+cd "/home/$USER/" || exit
+sudo pacman -S linux-headers zathura zathura-pdf-mupdf make gvim gnu-free-fonts xorg xorg-xinit redshift mpv scrot htop sudo vi pulseaudio acpi git xorg-xsetroot xorg-server dmenu libx11 freetype2 pkg-config transmission-cli base-devel neofetch xclip openssh unzip perl-rename pulsemixer gdb gimp unrar texlive-most texlive-lang dosfstools nano alsa-utils bluez bluez-utils pulseaudio-bluetooth pulseaudio-alsa pass zip cups gutenprint sxiv xorg-xrandr numlockx git-lfs biber imagemagick dash glew sdl2 sdl2_image glm python-pip speedtest-cli mutt lynx fakeroot webkit2gtk gcr gst-plugins-good gst-libav mediainfo p7zip dolphin-emu pdftk gnuplot ghostscript pkgfile dictd valgrind youtube-dl php monero wget shellcheck xorriso mtools bochs tcc net-tools vis time aspell-en rsync gnuplot yt-dlp ttf-dejavu usbutils inetutils whois smbclient words android-file-transfer man-pages picom dos2unix slock
+
+#set keyboard layout
+read -rp "Setting keyboard layout to gb..."
+sudo localectl --no-convert set-x11-keymap gb
+
+#set up git
+read -rp "Adding git account details..."
+git config --global user.name "$USER"
+cd "/home/$USER" || exit
+
+#set up gpg
+read -rp "Generating gpg key..."
+gpg --full-gen-key
+
+#set up pass
+read -rp "Setting up pass..."
+pass init "$EMAIL"
+pass insert "$EMAIL"
+
+#set up ssh key
+read -rp "Setting up ssh keys..."
+ssh-keygen -t ed25519 -C "$EMAIL"
+eval $(ssh-agent)
+ssh-add ~/.ssh/id_ed25519
+echo "AddKeysToAgent yes" > .ssh/config
+
+#authorising you on server
+#read -rp "Authorising you on my server (requires password obviously...)"
+ssh-copy-id -i ~/.ssh/id_ed25519.pub git@raygarner.co.uk
+ssh-copy-id -i ~/.ssh/id_ed25519.pub root@raygarner.co.uk
+
+#download dotfiles
+read -rp "Downloading dotfiles..."
+cd src
+#git clone "git@raygarner.co.uk:/srv/git/dotfiles.git" dotfiles
+git clone "https://github.com/raygarner/misc_dotfiles.git" dotfiles
+
+#link dotfiles to home
+read -rp "Linking dotfiles..."
+cd dotfiles || exit
+chmod +x link
+./link
+
+#download roff bib and makefile
+cd /home/$USER/docs
+#git clone "git@raygarner.co.uk:/srv/git/roff.git" roff
+git clone "https://github.com/raygarner/roff_stuff.git" roff
+cd /home/$USER
+
+#set shell
+chsh -s /bin/dash
+
+#download scripts
+read -rp "Downloading scripts..."
+cd /home/$USER/src
+#git clone "git@raygarner.co.uk:/srv/git/scripts.git" scripts
+git clone "https://github.com/raygarner/misc_scripts.git" scripts
+chmod +x scripts/*
+
+#download mutt config
+read -rp "Downloading mutt config..."
+cd /home/$USER
+#git clone "git@raygarner.co.uk:/srv/git/mutt_config.git" .mutt
+git clone "https://github.com/raygarner/mutt.git"  .mutt
+
+#download and build dwm
+read -rp "Downloading dwm..."
+cd src/builds || exit
+#git clone "git@raygarner.co.uk:/srv/git/rays_dwm.git" rays_dwm
+git clone "https://github.com/raygarner/dwm.git" rays_dwm
+read -rp "Building dwm..."
+cd rays_dwm || exit
+make
+sudo make install
+cd "/home/$USER/src/builds" || exit
+
+#download and build surf
+#read -rp "Downloading surf..."
+#git clone "git@raygarner.co.uk:/srv/git/rays_surf.git" rays_surf
+#read -rp "Building surf..."
+#cd rays_surf || exit
+#make
+#sudo make install
+#cd "/home/$USER/src/builds" || exit
+
+#download and build st
+read -rp "Downloading st..."
+#git clone "git@raygarner.co.uk:/srv/git/rays_st.git" rays_st
+git clone "https://github.com/raygarner/st.git" rays_st
+read -rp "Building st..."
+cd rays_st || exit
+make
+sudo make install
+cd "/home/$USER/src/builds" || exit
+
+#download and build slock
+#read -rp "Downloading slock..."
+#git clone "git@raygarner.co.uk:/srv/git/rays_slock.git" rays_slock
+#read -rp "Building slock..."
+#cd rays_slock || exit
+#make
+#sudo make install
+#cd "/home/$USER/src/builds" || exit
+
+#download and build farbfeld
+read -rp "Downloading farbeld..."
+git clone https://git.suckless.org/farbfeld
+read -rp "Building farbfeld..."
+cd farbfeld || exit
+make
+sudo make install
+cd "/home/$USER/src/builds" || exit
+
+#download and build sent
+read -rp "Downloading sent..."
+#git clone "git@raygarner.co.uk:/srv/git/rays_sent.git" rays_sent
+git clone https://git.suckless.org/sent rays_sent
+read -rp "Building sent..."
+cd rays_sent || exit
+make
+sudo make install
+cd "/home/$USER/src/builds" || exit
+
+#download and build yay
+read -rp "Downloading yay..."
+git clone https://aur.archlinux.org/yay.git
+read -rp "Building yay..."
+cd yay || exit
+makepkg -si
+cd "/home/$USER/src/builds" || exit
+
+#install downgrade
+read -rp "installing downgrade..."
+yay -S downgrade
+
+#install luacheck
+read -rp "Installing luacheck..."
+yay -S luacheck
+
+#install urlview
+read -rp "Installing urlview..."
+yay -S urlview
+
+#install xbindkeys
+read -rp "Installing xbindkeys..."
+yay -S xbindkeys
+
+#install brave
+read -rp "Installing brave..."
+yay -S brave-bin
+
+#install tor
+read -rp "Install tor browser..."
+yay -S tor-browser
+
+#install mons
+read -rp "Installing mons..."
+yay -S mons
+
+#install xwallpaper
+read -rp "Installing xwallpaper..."
+yay -S xwallpaper
+
+#install searx
+#note: may need to copy /etc/uwsgi/vassals/searxng.ini to /etc/uwsgi/searxng.ini
+read -rp "Installing searx..."
+yay -S searxng-git
+sudo systemctl enable uwsgi@searxng
+sudo systemctl start uwsgi@searxng
+
+#start and enable bluetooth service
+read -rp "Enabling bluetooth.service..."
+sudo systemctl enable bluetooth.service
+
+#start and enable cups
+read -rp "Enabling cups service..."
+sudo systemctl enable org.cups.cupsd.service
+sudo systemctl enable cups.service
+
+#start and enable dhcpcd
+reap -rp "Enabling dhcpcd..."
+sudo systemctl enable dhcpcd
+sudo systemctl start dhcpcd
+
+#bluetooth conf stuff
+read -rp "Configuring pulseaudio for bluetooth compatability..." 
+echo '' | sudo tee -a /etc/pulse/system.pa
+echo 'load-module module-bluetooth-policy' | sudo tee -a /etc/pulse/system.pa
+echo 'load-module module-bluetooth-discover' | sudo tee -a /etc/pulse/system.pa
+
+#relink /bin/sh
+read -rp "Relinking /bin/sh to dash..."
+sudo ln -sfT dash /usr/bin/sh
+
+#setup hosts file
+read -rp "Configuring hosts file..."
+cat /home/$USER/arch_config_script/hosts | sudo tee -a /etc/hosts
+
+#downloading wallpaper
+read -rp "Downloading wallpaper..."
+rsync -v root@raygarner.co.uk:/srv/media/papes/Swansfix1.JPG ~/media/pics/papes/
+
+echo 'End of script.'
+echo 'You should now reboot.'
